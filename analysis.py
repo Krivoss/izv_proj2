@@ -6,6 +6,10 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import zipfile
+from os.path import exists, dirname
+from os import makedirs
+import urllib.request
+
 
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu predstavenou na prednaskach
 # dalsi knihovny pak na dotaz
@@ -35,6 +39,26 @@ def load_data(filename : str) -> pd.DataFrame:
         "LBK": "18",
         "KVK": "19",
     }
+
+    if not exists(filename):
+        with urllib.request.urlopen("http://ehw.fit.vutbr.cz/izv/data.zip") as dl_file:
+            makedirs(dirname(filename), exist_ok=True)
+            with open(filename, "wb") as out_file:                
+                out_file.write(dl_file.read())
+
+    df = pd.DataFrame()
+    with zipfile.ZipFile(filename, "r") as root_zf:
+        for year_file in root_zf.infolist():
+            with zipfile.ZipFile(root_zf.open(year_file), "r") as year_zf:
+                for data_file in year_zf.infolist():
+                    if data_file.filename == "CHODCI.csv" or data_file.file_size == 0: continue
+                    with year_zf.open(data_file) as f:
+                        read_data = pd.read_csv(f, encoding="cp1250", delimiter=";", low_memory=False, names=headers)
+                        num = data_file.filename[0:2]
+                        read_data['region'] = list(regions.keys())[list(regions.values()).index(num)]
+                        df = pd.concat([df, read_data])
+    return df
+    
 
 # Ukol 2: zpracovani dat
 def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
