@@ -53,16 +53,32 @@ def load_data(filename : str) -> pd.DataFrame:
                 for data_file in year_zf.infolist():
                     if data_file.filename == "CHODCI.csv" or data_file.file_size == 0: continue
                     with year_zf.open(data_file) as f:
-                        read_data = pd.read_csv(f, encoding="cp1250", delimiter=";", low_memory=False, names=headers)
+                        read_data = pd.read_csv(f, encoding="cp1250", delimiter=";", low_memory=False, names=headers, decimal=",")
                         num = data_file.filename[0:2]
-                        read_data['region'] = list(regions.keys())[list(regions.values()).index(num)]
+                        read_data["region"] = list(regions.keys())[list(regions.values()).index(num)]
                         df = pd.concat([df, read_data])
     return df
     
 
 # Ukol 2: zpracovani dat
 def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
-    pass
+    parsed_df = pd.DataFrame(df, copy=True)
+    parsed_df.rename(columns={"p2a": "date"}, inplace = True)
+    parsed_df["date"] = pd.to_datetime(parsed_df["date"])
+
+    fcols = ["a", "b", "d", "e", "f", "g"]
+    to_category = parsed_df.drop(columns=fcols).drop(columns=["date", "region"])
+    parsed_df[to_category.columns] = to_category.astype('category')
+    parsed_df[fcols] = parsed_df[fcols].apply(pd.to_numeric, errors="coerce", downcast="float")
+    parsed_df.drop_duplicates(subset=["p1"], inplace=True)
+    parsed_df.to_csv("out_post.csv", index=False)
+
+    if verbose:
+        orig_size = df.memory_usage(index=True,deep=True).sum() / np.power(10, 6)
+        new_size = parsed_df.memory_usage(index=True,deep=True).sum() / np.power(10, 6)
+        print(f"orig_size={orig_size:.1f} MB")
+        print(f"new_size={new_size:.1f} MB")
+    return parsed_df
 
 # Ukol 3: počty nehod v jednotlivých regionech podle viditelnosti
 def plot_visibility(df: pd.DataFrame, fig_location: str = None,
