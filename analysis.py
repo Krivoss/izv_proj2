@@ -66,12 +66,12 @@ def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
     parsed_df.rename(columns={"p2a": "date"}, inplace = True)
     parsed_df["date"] = pd.to_datetime(parsed_df["date"])
 
-    fcols = ["a", "b", "d", "e", "f", "g"]
-    to_category = parsed_df.drop(columns=fcols).drop(columns=["date", "region"])
-    parsed_df[to_category.columns] = to_category.astype('category')
-    parsed_df[fcols] = parsed_df[fcols].apply(pd.to_numeric, errors="coerce", downcast="float")
+    category = ["k", "l", "o", "p", "q"]
+    parsed_df[category] = parsed_df[category].astype("category")
+    not_numeric = ["date", "region", "h", "i"] + category
+    to_numeric = parsed_df.drop(not_numeric, axis=1).apply(pd.to_numeric, errors="coerce")
+    parsed_df[to_numeric.columns] = to_numeric
     parsed_df.drop_duplicates(subset=["p1"], inplace=True)
-    parsed_df.to_csv("out_post.csv", index=False)
 
     if verbose:
         orig_size = df.memory_usage(index=True,deep=True).sum() / np.power(10, 6)

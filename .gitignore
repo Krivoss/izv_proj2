@@ -1,3 +1,4 @@
 data_extracted/
 data/
 out_*
+.~lock.*
