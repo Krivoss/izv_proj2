@@ -63,14 +63,17 @@ def load_data(filename : str) -> pd.DataFrame:
 # Ukol 2: zpracovani dat
 def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
     parsed_df = pd.DataFrame(df, copy=True)
+
     parsed_df.rename(columns={"p2a": "date"}, inplace = True)
     parsed_df["date"] = pd.to_datetime(parsed_df["date"])
 
     category = ["k", "l", "o", "p", "q"]
     parsed_df[category] = parsed_df[category].astype("category")
+
     not_numeric = ["date", "region", "h", "i"] + category
     to_numeric = parsed_df.drop(not_numeric, axis=1).apply(pd.to_numeric, errors="coerce")
     parsed_df[to_numeric.columns] = to_numeric
+
     parsed_df.drop_duplicates(subset=["p1"], inplace=True)
 
     if verbose:
@@ -78,12 +81,50 @@ def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
         new_size = parsed_df.memory_usage(index=True,deep=True).sum() / np.power(10, 6)
         print(f"orig_size={orig_size:.1f} MB")
         print(f"new_size={new_size:.1f} MB")
+
     return parsed_df
 
 # Ukol 3: počty nehod v jednotlivých regionech podle viditelnosti
 def plot_visibility(df: pd.DataFrame, fig_location: str = None,
                     show_figure: bool = False):
-    pass
+    sel_regions = ["PHA", "STC", "PLK", "JHM"]
+    df = df.loc[df["region"].isin(sel_regions)]
+
+    types_list = ["den: viditelnost nezhoršená", "den: viditelnost zhoršená", "noc: viditelnost nezhoršená", "noc: viditelnost zhoršená"]
+    types_dic = {
+        1: types_list[0],
+        2: types_list[1],
+        2: types_list[1],
+        4: types_list[2],
+        6: types_list[2],
+        5: types_list[3],
+        7: types_list[3]
+    }
+    
+    df = df.replace(types_dic)
+ 
+    df = df.groupby(["region"])["p19"].value_counts().rename_axis(["region", "type"]).to_frame("count").reset_index()
+
+    sns.set_style("darkgrid")
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(8, 6))
+    axes = axes.flatten()
+    sns.despine()
+    for i in range(4):
+        sns.barplot(ax=axes[i],
+                    data=df.loc[df["type"] == types_list[i]],
+                    x="region",
+                    y="count")
+        axes[i].set_title(types_list[i])
+        axes[i].set(ylabel='Počet nehod', xlabel='Kraj')
+        
+    axes[0].set(xlabel='')
+    axes[1].set(ylabel='', xlabel='')
+    axes[3].set(ylabel='')
+    fig.tight_layout()
+    plt.show()
+
+
+
 
 # Ukol4: druh srážky jedoucích vozidel
 def plot_direction(df: pd.DataFrame, fig_location: str = None,
@@ -99,8 +140,13 @@ if __name__ == "__main__":
     # zde je ukazka pouziti, tuto cast muzete modifikovat podle libosti
     # skript nebude pri testovani pousten primo, ale budou volany konkreni 
     # funkce.
-    df = load_data("data/data.zip")
-    df2 = parse_data(df, True)
+    file_name ="parsed_data.csv"
+    if False:
+        df = load_data("data/data.zip")
+        df2 = parse_data(df, True)        
+        df2.to_pickle(file_name)
+    else:
+        df2 = pd.read_pickle(file_name)
     
     plot_visibility(df2, "01_visibility.png")
     plot_direction(df2, "02_direction.png", True)
