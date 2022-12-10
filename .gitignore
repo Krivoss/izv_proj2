@@ -3,3 +3,4 @@ data/
 out_*
 .~lock.*
 *.csv
+*.png
