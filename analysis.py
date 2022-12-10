@@ -40,12 +40,6 @@ def load_data(filename : str) -> pd.DataFrame:
         "KVK": "19",
     }
 
-    if not exists(filename):
-        with urllib.request.urlopen("http://ehw.fit.vutbr.cz/izv/data.zip") as dl_file:
-            makedirs(dirname(filename), exist_ok=True)
-            with open(filename, "wb") as out_file:                
-                out_file.write(dl_file.read())
-
     df = pd.DataFrame()
     with zipfile.ZipFile(filename, "r") as root_zf:
         for year_file in root_zf.infolist():
@@ -84,26 +78,27 @@ def parse_data(df : pd.DataFrame, verbose : bool = False) -> pd.DataFrame:
 
     return parsed_df
 
+
 # Ukol 3: počty nehod v jednotlivých regionech podle viditelnosti
 def plot_visibility(df: pd.DataFrame, fig_location: str = None,
                     show_figure: bool = False):
     sel_regions = ["PHA", "STC", "PLK", "JHM"]
+    df = df.copy(deep=True)
     df = df.loc[df["region"].isin(sel_regions)]
 
     types_list = ["den: viditelnost nezhoršená", "den: viditelnost zhoršená", "noc: viditelnost nezhoršená", "noc: viditelnost zhoršená"]
     types_dic = {
         1: types_list[0],
         2: types_list[1],
-        2: types_list[1],
+        3: types_list[1],
         4: types_list[2],
-        6: types_list[2],
         5: types_list[3],
+        6: types_list[2],
         7: types_list[3]
-    }
+    }    
+    df.loc[:, "p19"] = df.loc[:, "p19"].replace(types_dic)
     
-    df = df.replace(types_dic)
- 
-    df = df.groupby(["region"])["p19"].value_counts().rename_axis(["region", "type"]).to_frame("count").reset_index()
+    df = (df.groupby(["region", "p19"]).agg({"p1" : "count"})).reset_index()
 
     sns.set_style("darkgrid")
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(8, 6))
@@ -111,15 +106,15 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
     sns.despine()
     for i in range(4):
         sns.barplot(ax=axes[i],
-                    data=df.loc[df["type"] == types_list[i]],
+                    data=df.loc[df["p19"] == types_list[i]],
                     x="region",
-                    y="count")
+                    y="p1")
         axes[i].set_title(types_list[i])
-        axes[i].set(ylabel='Počet nehod', xlabel='Kraj')
+        axes[i].set(ylabel="Počet nehod", xlabel="Kraj")
         
-    axes[0].set(xlabel='')
-    axes[1].set(ylabel='', xlabel='')
-    axes[3].set(ylabel='')
+    axes[0].set(xlabel="")
+    axes[1].set(ylabel="", xlabel="")
+    axes[3].set(ylabel="")
     fig.tight_layout()
     
     if fig_location:
@@ -127,32 +122,72 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
     if show_figure:
         plt.show()
 
-
-
-
 # Ukol4: druh srážky jedoucích vozidel
 def plot_direction(df: pd.DataFrame, fig_location: str = None,
                    show_figure: bool = False):
-    pass
+    df = df.copy(deep=True)
+    sel_regions = ["PHA", "STC", "PLK", "JHM"]    
+    df = df.loc[df["region"].isin(sel_regions)]
+
+    collision_types = {
+        1: "čelní",
+        2: "boční",
+        3: "boční",
+        4: "zezadu",
+        0: "nepřichází v úvahu"
+    }
+    df = df[df["p7"] != 0]
+    
+    df["p7"] = df["p7"].replace(collision_types)
+
+    df["month"] = df["date"].dt.month
+
+    data = (df.groupby(["region", "month", "p7"]).agg({"p1" : "count"})).reset_index()
+    sns.set_style("darkgrid")
+    g = sns.catplot(data=data,
+                x="month",
+                y="p1",
+                hue="p7",
+                kind="bar",
+                col="region",
+                sharey=False,
+                sharex=False,
+                col_wrap=2,
+                aspect=1.4,
+                legend=True,
+                legend_out=True,
+                errorbar=None)
+    g.set_titles("Kraj: {col_name}")
+    g.set_xlabels("Měsíc")
+    g.set_ylabels("Počet nehod")
+    g.legend.set(title="Druh srážky")
+    g.tight_layout()
+
+    if fig_location:
+        plt.savefig(fig_location)
+    if show_figure:
+        plt.show()
 
 # Ukol 5: Následky v čase
 def plot_consequences(df: pd.DataFrame, fig_location: str = None,
                     show_figure: bool = False):
     pass
 
+
 if __name__ == "__main__":
     # zde je ukazka pouziti, tuto cast muzete modifikovat podle libosti
     # skript nebude pri testovani pousten primo, ale budou volany konkreni 
     # funkce.
     file_name ="parsed_data.csv"
-    if False:
+    new_load = False
+    if new_load:
         df = load_data("data/data.zip")
         df2 = parse_data(df, True)        
         df2.to_pickle(file_name)
     else:
         df2 = pd.read_pickle(file_name)
     
-    plot_visibility(df2, "01_visibility.png", True)
+    # plot_visibility(df2, "01_visibility.png", True)
     plot_direction(df2, "02_direction.png", True)
     plot_consequences(df2, "03_consequences.png")
 
