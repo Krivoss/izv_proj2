@@ -121,7 +121,11 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
     axes[1].set(ylabel='', xlabel='')
     axes[3].set(ylabel='')
     fig.tight_layout()
-    plt.show()
+    
+    if fig_location:
+        plt.savefig(fig_location)
+    if show_figure:
+        plt.show()
 
 
 
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     else:
         df2 = pd.read_pickle(file_name)
     
-    plot_visibility(df2, "01_visibility.png")
+    plot_visibility(df2, "01_visibility.png", True)
     plot_direction(df2, "02_direction.png", True)
     plot_consequences(df2, "03_consequences.png")
 
