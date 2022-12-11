@@ -7,7 +7,7 @@ import seaborn as sns
 import numpy as np
 import zipfile
 from os import makedirs
-from os.path import dirname
+from os.path import dirname, isdir
 
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu
 # predstavenou na prednaskach dalsi knihovny pak na dotaz
@@ -147,7 +147,10 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
     fig.tight_layout()
 
     if fig_location:
-        makedirs(dirname(fig_location), exist_ok=True)
+        if not isdir(fig_location):
+            dir_name = dirname(fig_location)
+            if dir_name:
+                makedirs(dir_name, exist_ok=True)
         plt.savefig(fig_location)
 
     if show_figure:
@@ -204,7 +207,10 @@ def plot_direction(df: pd.DataFrame, fig_location: str = None,
     g.tight_layout()
 
     if fig_location:
-        makedirs(dirname(fig_location), exist_ok=True)
+        if not isdir(fig_location):
+            dir_name = dirname(fig_location)
+            if dir_name:
+                makedirs(dir_name, exist_ok=True)
         plt.savefig(fig_location)
     if show_figure:
         plt.show()
@@ -244,7 +250,10 @@ def plot_consequences(df: pd.DataFrame, fig_location: str = None,
                  )
 
     if fig_location:
-        makedirs(dirname(fig_location), exist_ok=True)
+        if not isdir(fig_location):
+            dir_name = dirname(fig_location)
+            if dir_name:
+                makedirs(dir_name, exist_ok=True)
         plt.savefig(fig_location)
     if show_figure:
         plt.show()
@@ -255,7 +264,7 @@ if __name__ == "__main__":
     # skript nebude pri testovani pousten primo, ale budou volany konkreni
     # funkce.
     file_name = "parsed_df.csv"
-    new_load = False
+    new_load = True
     if new_load:
         df = load_data("data/data.zip")
         df2 = parse_data(df, True)
@@ -263,8 +272,8 @@ if __name__ == "__main__":
     else:
         df2 = pd.read_pickle(file_name)
 
-    # plot_visibility(df2, "01_visibility.png", True)
-    plot_direction(df2, "graph/02_direction.png", True)
+    plot_visibility(df2, "01_visibility.png", True)
+    plot_direction(df2, "02_direction.png", True)
     # plot_consequences(df2, "03_consequences.png", True)
 
 
