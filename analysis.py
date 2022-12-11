@@ -6,6 +6,8 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import zipfile
+from os import makedirs
+from os.path import dirname
 
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu
 # predstavenou na prednaskach dalsi knihovny pak na dotaz
@@ -13,6 +15,11 @@ import zipfile
 
 # Ukol 1: nacteni dat ze ZIP souboru
 def load_data(filename: str) -> pd.DataFrame:
+    """Load data from file to DataFrame
+
+    Keyword arguments:
+        filename -- path to the file
+    """
     # tyto konstanty nemente, pomuzou vam pri nacitani
     headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)",
                "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
@@ -61,6 +68,13 @@ def load_data(filename: str) -> pd.DataFrame:
 
 # Ukol 2: zpracovani dat
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+    """Create new DataFrame and parse data loaded from file
+
+    Keyword arguments:
+        df -- DataFrame with loaded data
+        verbose -- Outputs size of the original Dataframe
+        and the size of the new one
+    """
     parsed_df = pd.DataFrame(df, copy=True)
 
     parsed_df.rename(columns={"p2a": "date"}, inplace=True)
@@ -90,6 +104,13 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 # Ukol 3: počty nehod v jednotlivých regionech podle viditelnosti
 def plot_visibility(df: pd.DataFrame, fig_location: str = None,
                     show_figure: bool = False):
+    """Create a graph of types of collisions in four different regions
+
+    Keyword arguments:
+        df -- DataFrame with data
+        fig_location -- path for saving the graph
+        show_figure -- option to display the graph
+    """
     sel_regions = ["PHA", "STC", "PLK", "JHM"]
     df = df.copy(deep=True)
     df = df.loc[df["region"].isin(sel_regions)]
@@ -126,7 +147,9 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
     fig.tight_layout()
 
     if fig_location:
+        makedirs(dirname(fig_location), exist_ok=True)
         plt.savefig(fig_location)
+
     if show_figure:
         plt.show()
 
@@ -134,6 +157,13 @@ def plot_visibility(df: pd.DataFrame, fig_location: str = None,
 # Ukol 4: druh srážky jedoucích vozidel
 def plot_direction(df: pd.DataFrame, fig_location: str = None,
                    show_figure: bool = False):
+    """Create a graph of collision types in four regions
+
+    Keyword arguments:
+        df -- DataFrame with data
+        fig_location -- path for saving the graph
+        show_figure -- option to display the graph
+    """
     df = df.copy(deep=True)
     sel_regions = ["PHA", "STC", "PLK", "JHM"]
     df = df.loc[df["region"].isin(sel_regions)]
@@ -174,6 +204,7 @@ def plot_direction(df: pd.DataFrame, fig_location: str = None,
     g.tight_layout()
 
     if fig_location:
+        makedirs(dirname(fig_location), exist_ok=True)
         plt.savefig(fig_location)
     if show_figure:
         plt.show()
@@ -182,6 +213,13 @@ def plot_direction(df: pd.DataFrame, fig_location: str = None,
 # Ukol 5: Následky v čase
 def plot_consequences(df: pd.DataFrame, fig_location: str = None,
                       show_figure: bool = False):
+    """Create a graph of accident consequences
+
+    Keyword arguments:
+        df -- DataFrame with data
+        fig_location -- path for saving the graph
+        show_figure -- option to display the graph
+    """
     df = df.copy(deep=True)
     sel_regions = ["PHA", "STC", "PLK", "JHM"]
     df = df.loc[df["region"].isin(sel_regions)]
@@ -197,7 +235,6 @@ def plot_consequences(df: pd.DataFrame, fig_location: str = None,
     df = (df.groupby(["region", "date"]).agg({"p1": "count"})).reset_index()
     df = (df.groupby(pd.Grouper(key="date", freq="MS")).agg(
         {"p1": "count"})).reset_index()
-    #
 
     sns.lineplot(data=df,
                  x="date",
@@ -207,6 +244,7 @@ def plot_consequences(df: pd.DataFrame, fig_location: str = None,
                  )
 
     if fig_location:
+        makedirs(dirname(fig_location), exist_ok=True)
         plt.savefig(fig_location)
     if show_figure:
         plt.show()
@@ -226,8 +264,8 @@ if __name__ == "__main__":
         df2 = pd.read_pickle(file_name)
 
     # plot_visibility(df2, "01_visibility.png", True)
-    # plot_direction(df2, "02_direction.png", True)
-    plot_consequences(df2, "03_consequences.png", True)
+    plot_direction(df2, "graph/02_direction.png", True)
+    # plot_consequences(df2, "03_consequences.png", True)
 
 
 # Poznamka:
