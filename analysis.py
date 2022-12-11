@@ -6,13 +6,10 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import zipfile
-from os.path import exists, dirname
-from os import makedirs
-import urllib.request
-
 
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu
 # predstavenou na prednaskach dalsi knihovny pak na dotaz
+
 
 # Ukol 1: nacteni dat ze ZIP souboru
 def load_data(filename: str) -> pd.DataFrame:
@@ -181,9 +178,8 @@ def plot_direction(df: pd.DataFrame, fig_location: str = None,
     if show_figure:
         plt.show()
 
+
 # Ukol 5: Následky v čase
-
-
 def plot_consequences(df: pd.DataFrame, fig_location: str = None,
                       show_figure: bool = False):
     df = df.copy(deep=True)
